@@ -12,16 +12,31 @@
     <h1>Daily Fueling Calculator</h1>
 
     <section class="card">
+      <h2>Presets</h2>
+      <div class="row">
+        <button class="btn" data-preset="rest">Rest</button>
+        <button class="btn" data-preset="lift">Lift Only</button>
+        <button class="btn" data-preset="easy">Lift + Easy Run</button>
+        <button class="btn" data-preset="speed">Lift + Speed/Hard Run</button>
+        <button class="btn" data-preset="long">Long Run Day</button>
+      </div>
+      <p class="muted">Presets only fill fields. Adjust as needed.</p>
+    </section>
+
+    <section class="card">
       <h2>Constants</h2>
       <div class="grid">
-        <label>BMR
+        <label>BMR (kcal)
           <input id="bmr" type="number" value="1750"/>
         </label>
         <label>Run kcal per mile
           <input id="kcalPerMile" type="number" value="100"/>
         </label>
-        <label>Surplus
+        <label>Surplus (kcal)
           <input id="surplus" type="number" value="300"/>
+        </label>
+        <label>NEAT kcal per 10k steps
+          <input id="kcalPer10kSteps" type="number" value="420"/>
         </label>
       </div>
     </section>
@@ -41,6 +56,21 @@
         <label>Lifting kcal
           <input id="liftCals" type="number" value="350"/>
         </label>
+        <label>Sauna minutes
+          <input id="saunaMin" type="number" value="0"/>
+        </label>
+      </div>
+
+      <div class="row">
+        <label class="check">
+          <input id="hardDay" type="checkbox"/>
+          Hard run day (threshold/VO2/fast finish long run)
+        </label>
+
+        <label class="check">
+          <input id="aggressiveBulk" type="checkbox"/>
+          Aggressive bulk mode (+150 kcal)
+        </label>
       </div>
     </section>
 
@@ -48,8 +78,16 @@
       <h2>Results</h2>
       <div id="results"></div>
     </section>
+
+    <section class="card">
+      <h2>Notes</h2>
+      <ul>
+        <li>Non-Run Steps should exclude run mileage and gym commuting runs if already counted in run miles.</li>
+        <li>Macros are targets, not commandments. Hit calories + protein first, then carbs, then fat.</li>
+      </ul>
+    </section>
   </main>
 
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
