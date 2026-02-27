@@ -1,122 +1,55 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Daily Fueling Calculator</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0b0f19" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Fueling Calculator</title>
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 
 <body>
   <main class="container">
-    <header class="header">
-      <h1>Daily Fueling Calculator</h1>
-      <p class="sub">BMR + Training + NEAT + Surplus</p>
-    </header>
+    <h1>Daily Fueling Calculator</h1>
 
     <section class="card">
-      <h2>Defaults</h2>
+      <h2>Constants</h2>
       <div class="grid">
-        <label>
-          BMR (kcal)
-          <input id="bmr" type="number" inputmode="numeric" value="1750" />
+        <label>BMR
+          <input id="bmr" type="number" value="1750"/>
         </label>
-
-        <label>
-          Run burn (kcal / mile)
-          <input id="kcalPerMile" type="number" inputmode="numeric" value="100" />
+        <label>Run kcal per mile
+          <input id="kcalPerMile" type="number" value="100"/>
         </label>
-
-        <label>
-          Surplus (kcal)
-          <input id="surplus" type="number" inputmode="numeric" value="300" />
+        <label>Surplus
+          <input id="surplus" type="number" value="300"/>
         </label>
       </div>
-      <p class="note">These can be changed anytime; the app will remember the last values.</p>
     </section>
 
     <section class="card">
-      <h2>Today’s Inputs</h2>
+      <h2>Today</h2>
       <div class="grid">
-        <label>
-          Run miles
-          <input id="miles" type="number" inputmode="decimal" step="0.1" value="0" />
+        <label>Bodyweight (lb)
+          <input id="bw" type="number" value="147"/>
         </label>
-
-        <label>
-          Steps
-          <input id="steps" type="number" inputmode="numeric" value="10000" />
+        <label>Run miles
+          <input id="miles" type="number" step="0.1" value="0"/>
         </label>
-
-        <label class="toggle">
-          <input id="stepsIncludeRun" type="checkbox" checked />
-          Steps already include run?
+        <label>Non-Run Steps (NEAT only)
+          <input id="neatSteps" type="number" value="10000"/>
         </label>
-
-        <label>
-          Steps burn (kcal per 10k steps)
-          <input id="kcalPer10kSteps" type="number" inputmode="numeric" value="420" />
-        </label>
-
-        <label>
-          Lifting calories (kcal)
-          <input id="liftCals" type="number" inputmode="numeric" value="350" />
-        </label>
-
-        <label>
-          Bike (minutes)
-          <input id="bikeMin" type="number" inputmode="numeric" value="0" />
-        </label>
-
-        <label>
-          Bike burn (kcal / hour)
-          <input id="bikeKcalPerHour" type="number" inputmode="numeric" value="500" />
-        </label>
-
-        <label>
-          Sauna (minutes)
-          <input id="saunaMin" type="number" inputmode="numeric" value="0" />
-        </label>
-
-        <label>
-          Sauna burn (kcal / hour)
-          <input id="saunaKcalPerHour" type="number" inputmode="numeric" value="80" />
+        <label>Lifting kcal
+          <input id="liftCals" type="number" value="350"/>
         </label>
       </div>
     </section>
 
     <section class="card">
       <h2>Results</h2>
-
-      <div class="results">
-        <div class="line"><span>BMR</span><strong id="outBmr">—</strong></div>
-        <div class="line"><span>Run calories</span><strong id="outRun">—</strong></div>
-        <div class="line"><span>Steps calories</span><strong id="outSteps">—</strong></div>
-        <div class="line"><span>Lifting calories</span><strong id="outLift">—</strong></div>
-        <div class="line"><span>Bike calories</span><strong id="outBike">—</strong></div>
-        <div class="line"><span>Sauna calories</span><strong id="outSauna">—</strong></div>
-        <div class="line total"><span>Maintenance estimate</span><strong id="outMaint">—</strong></div>
-        <div class="line total2"><span>Target (maintenance + surplus)</span><strong id="outTarget">—</strong></div>
-      </div>
-
-      <div class="actions">
-        <button id="copyBtn">Copy summary</button>
-        <button id="resetBtn" class="secondary">Reset today</button>
-      </div>
-
-      <pre id="summary" class="summary" aria-label="Summary text"></pre>
+      <div id="results"></div>
     </section>
-
-    <footer class="footer">
-      <small>Local-only: values save on this device. No accounts.</small>
-    </footer>
   </main>
 
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
-
-
-
