@@ -1,77 +1,127 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Fueling Calculator</title>
   <link rel="stylesheet" href="styles.css"/>
+  <link rel="manifest" href="manifest.webmanifest">
 </head>
 
 <body>
   <main class="container">
-    <h1>Daily Fueling Calculator</h1>
+    <header class="top">
+      <h1>Fuel</h1>
+      <p class="muted">Targets for calories + macros based on your day. Keep it simple.</p>
+    </header>
 
     <section class="card">
-      <h2>Presets</h2>
-      <div class="row">
+      <div class="row wrap">
         <button class="btn" data-preset="rest">Rest</button>
-        <button class="btn" data-preset="lift">Lift Only</button>
-        <button class="btn" data-preset="easy">Lift + Easy Run</button>
-        <button class="btn" data-preset="speed">Lift + Speed/Hard Run</button>
-        <button class="btn" data-preset="long">Long Run Day</button>
+        <button class="btn" data-preset="lift">Lift</button>
+        <button class="btn" data-preset="easy">Lift + Easy</button>
+        <button class="btn" data-preset="quality">Lift + Quality</button>
+        <button class="btn" data-preset="long">Long Run</button>
       </div>
-      <p class="muted">Presets only fill fields. Adjust as needed.</p>
-    </section>
-
-    <section class="card">
-      <h2>Constants</h2>
-      <div class="grid">
-        <label>BMR (kcal)
-          <input id="bmr" type="number" value="1750"/>
-        </label>
-        <label>Run kcal per mile
-          <input id="kcalPerMile" type="number" value="100"/>
-        </label>
-        <label>Surplus (kcal)
-          <input id="surplus" type="number" value="300"/>
-        </label>
-        <label>NEAT kcal per 10k steps
-          <input id="kcalPer10kSteps" type="number" value="420"/>
-        </label>
-      </div>
+      <p class="muted small">Presets just fill fields. You can override anything.</p>
     </section>
 
     <section class="card">
       <h2>Today</h2>
+
       <div class="grid">
         <label>Bodyweight (lb)
-          <input id="bw" type="number" value="147"/>
+          <input id="bwLb" type="number" inputmode="decimal" value="147"/>
         </label>
-        <label>Run miles
-          <input id="miles" type="number" step="0.1" value="0"/>
+
+        <label>Non-run steps (NEAT)
+          <input id="neatSteps" type="number" inputmode="numeric" value="10000"/>
         </label>
-        <label>Non-Run Steps (NEAT only)
-          <input id="neatSteps" type="number" value="10000"/>
+
+        <label>Lifting minutes
+          <input id="liftMin" type="number" inputmode="numeric" value="45"/>
         </label>
-        <label>Lifting kcal
-          <input id="liftCals" type="number" value="350"/>
+
+        <label>Lifting effort (1–5)
+          <input id="liftEffort" type="number" min="1" max="5" step="1" value="3"/>
         </label>
+
         <label>Sauna minutes
-          <input id="saunaMin" type="number" value="0"/>
+          <input id="saunaMin" type="number" inputmode="numeric" value="0"/>
+        </label>
+
+        <label>Run type
+          <select id="runType">
+            <option value="none">No run</option>
+            <option value="easy">Easy</option>
+            <option value="quality">Threshold/VO₂/fast</option>
+            <option value="long">Long</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid">
+        <label>Run calories method
+          <select id="runMethod">
+            <option value="distance">Distance-based (best default)</option>
+            <option value="treadmill">Treadmill speed+grade+minutes</option>
+          </select>
+        </label>
+
+        <label>Run miles (if distance-based)
+          <input id="runMiles" type="number" step="0.1" value="0"/>
+        </label>
+
+        <label>Run minutes (if treadmill method)
+          <input id="runMin" type="number" step="1" value="0"/>
+        </label>
+
+        <label>Treadmill speed (mph)
+          <input id="tmMph" type="number" step="0.1" value="7.5"/>
+        </label>
+
+        <label>Treadmill incline (%)
+          <input id="tmGrade" type="number" step="0.5" value="0"/>
+        </label>
+
+        <label>Stride length (inches) for steps
+          <input id="strideIn" type="number" step="0.5" value="30"/>
         </label>
       </div>
 
       <div class="row">
         <label class="check">
-          <input id="hardDay" type="checkbox"/>
-          Hard run day (threshold/VO2/fast finish long run)
-        </label>
-
-        <label class="check">
           <input id="aggressiveBulk" type="checkbox"/>
-          Aggressive bulk mode (+150 kcal)
+          Aggressive bulk (+150 kcal)
         </label>
       </div>
+
+      <details class="details">
+        <summary>Advanced constants</summary>
+        <div class="grid" style="margin-top:10px;">
+          <label>BMR (kcal)
+            <input id="bmr" type="number" value="1750"/>
+          </label>
+
+          <label>Base surplus (kcal)
+            <input id="surplus" type="number" value="300"/>
+          </label>
+
+          <label>Walking cost (kcal/kg/km)
+            <input id="walkKcalPerKgKm" type="number" step="0.05" value="0.50"/>
+          </label>
+
+          <label>Running cost (kcal/kg/km)
+            <input id="runKcalPerKgKm" type="number" step="0.05" value="1.00"/>
+          </label>
+        </div>
+
+        <p class="muted small">
+          Running cost ~1.0 kcal/kg/km is a well-used approximation; treadmill method uses an ACSM-style equation.  [oai_citation:4‡PubMed](https://pubmed.ncbi.nlm.nih.gov/3732253/?utm_source=chatgpt.com)
+        </p>
+      </details>
     </section>
 
     <section class="card">
@@ -80,10 +130,11 @@
     </section>
 
     <section class="card">
-      <h2>Notes</h2>
-      <ul>
-        <li>Non-Run Steps should exclude run mileage and gym commuting runs if already counted in run miles.</li>
-        <li>Macros are targets, not commandments. Hit calories + protein first, then carbs, then fat.</li>
+      <h2>Rules</h2>
+      <ul class="muted small">
+        <li>Calories first. Protein second. Then carbs. Fat last (but don’t drop fat below the floor).</li>
+        <li>Use <b>distance-based run calories</b> unless treadmill speed/grade is known and accurate.</li>
+        <li>Non-run steps should exclude steps you’re counting as “run miles.”</li>
       </ul>
     </section>
   </main>
