@@ -114,18 +114,57 @@ function calculate(){
   if (liftMinVal > 0) protein = Math.max(protein, 180);
   protein = round(protein);
 
-  // Fat: vary with run volume; keep sane bounds
-  let fatPerLb = 0.42;
-  if (runMilesVal >= 6) fatPerLb = 0.40;
-  if (runMilesVal >= 10) fatPerLb = 0.37;
-  if (runMilesVal >= 13) fatPerLb = 0.35;
-  if (hardDay) fatPerLb -= 0.03;
+  // -------------------
+// Fat + Carb logic (fixed so carbs don't go insane)
+// -------------------
 
-  fatPerLb = clamp(fatPerLb, 0.30, 0.45);
-  let fat = round(bwLb * fatPerLb);
+// 1) Set a REAL fat floor
+// - Floor A: grams per lb (hybrid bulking floor)
+// - Floor B: % of calories (keeps hormones/satiety sane)
+const fatFloorG_perLb = hardDay ? 0.45 : 0.50;     // slightly higher on non-hard days
+const fatFloorPct = hardDay ? 0.22 : 0.25;         // 22–25% of calories as a floor
 
-  // Carbs fill remainder
-  let carbs = round((target - (protein * 4) - (fat * 9)) / 4);
+const fatFloorA = bwLb * fatFloorG_perLb;          // grams
+const fatFloorB = (target * fatFloorPct) / 9;      // grams
+
+let fat = round(Math.max(fatFloorA, fatFloorB));
+
+// 2) Carbs fill remainder
+let carbs = round((target - (protein * 4) - (fat * 9)) / 4);
+
+// 3) Optional carb ceiling (no new inputs): cap carbs to a reasonable g/kg range,
+// and if carbs exceed, push the extra calories into fat (up to a fat ceiling %)
+const kg = bwLb * 0.45359237;
+const carbCeiling_gPerKg = hardDay ? 7.0 : 6.0;    // typical upper bound for your goals
+const carbMax = round(kg * carbCeiling_gPerKg);
+
+const fatCeilPct = 0.35;                           // don't let fat explode either
+const fatMax = Math.floor((target * fatCeilPct) / 9);
+
+if (carbs > carbMax) {
+  const extraCarbG = carbs - carbMax;
+  const extraCals = extraCarbG * 4;
+
+  const roomForFatG = Math.max(0, fatMax - fat);
+  const addFatG = Math.min(roomForFatG, Math.round(extraCals / 9));
+
+  fat += addFatG;
+
+  // Recompute carbs after shifting calories into fat
+  carbs = round((target - (protein * 4) - (fat * 9)) / 4);
+}
+
+// 4) Minimum carbs guardrail (keep your existing idea, but now it’ll rarely trigger)
+const minCarbs = hardDay ? 280 : 220;
+if (carbs < minCarbs) {
+  const needed = minCarbs - carbs;
+  carbs += needed;
+
+  // remove equivalent calories from fat if possible (down to fat floor)
+  const fatReduction = Math.ceil((needed * 4) / 9);
+  const fatFloorFinal = round(Math.max(fatFloorA, fatFloorB));
+  fat = Math.max(fatFloorFinal, fat - fatReduction);
+}
 
   // Guardrails: ensure carbs not absurdly low
   const minCarbs = hardDay ? 280 : 220;
