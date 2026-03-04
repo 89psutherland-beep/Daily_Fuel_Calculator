@@ -165,17 +165,7 @@ if (carbs < minCarbs) {
   const fatFloorFinal = round(Math.max(fatFloorA, fatFloorB));
   fat = Math.max(fatFloorFinal, fat - fatReduction);
 }
-
-  // Guardrails: ensure carbs not absurdly low
-  const minCarbs = hardDay ? 280 : 220;
-  if (carbs < minCarbs){
-    const needed = minCarbs - carbs;
-    carbs += needed;
-    // pull calories from fat first if possible
-    const fatReduction = Math.ceil((needed * 4) / 9);
-    fat = Math.max(45, fat - fatReduction);
-  }
-
+  
   const sodium = calcSodiumMg({ runMiles: runMilesVal, saunaMin: saunaMinVal, steps: stepsVal, hardDay });
 
   $("results").innerHTML = `
