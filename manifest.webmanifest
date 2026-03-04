@@ -1,6 +1,7 @@
+// manifest.webmanifest
 {
   "name": "Daily Fueling Calculator",
-  "short_name": "Fuel",
+  "short_name": "Fuel Calc",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0b0f19",
