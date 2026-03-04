@@ -1,242 +1,229 @@
+// app.js
 function $(id){ return document.getElementById(id); }
 function round(n){ return Math.round(n); }
 function clamp(x, lo, hi){ return Math.max(lo, Math.min(hi, x)); }
 
-// --- Helpers ---
-function lbToKg(lb){ return lb * 0.45359237; }
+const STRIDE_IN = 30;            // fixed stride length per your request
+const IN_PER_MILE = 63360;
+const WALK_MPH = 3.0;            // used to convert distance -> time for ACSM equation
+const SAUNA_KCAL_PER_MIN = 2.0;  // conservative
+const RUN_KCAL_PER_KG_PER_KM = 1.036; // validated running cost constant
 
-// Running calories:
-// Very robust rule: ~1.0 kcal / kg / km
-// Therefore: kcal = kg * km * runEff
-function calcRunCals({ bwLb, miles, runEff }){
-  const kg = lbToKg(bwLb);
-  const km = miles * 1.609344;
-  const eff = clamp(runEff, 0.85, 1.20); // guardrail
-  return kg * km * eff;
+// Lift intensity mapping (kcal/min)
+// Range grounded in typical resistance training estimates (~3–9 kcal/min)
+const LIFT_KCAL_MIN = {
+  1: 3.0,   // very easy / long rests
+  2: 4.0,   // easy-moderate
+  3: 5.5,   // typical hypertrophy session
+  4: 7.0,   // dense session / shorter rests
+  5: 8.5    // very hard / high density
+};
+
+let selectedIntensity = 3;
+
+function setIntensity(n){
+  selectedIntensity = n;
+  document.querySelectorAll(".segBtn").forEach(b=>{
+    b.classList.toggle("active", +b.dataset.intensity === n);
+  });
+  const rate = LIFT_KCAL_MIN[n];
+  $("liftKcalHint").textContent = `Using ~${rate.toFixed(1)} kcal/min`;
+  calculate();
 }
 
-// NEAT calories:
-// default (simple): kcalPer10k * steps/10k
-// optional (MET): steps→miles→hours, then kcal = MET * kg * hours
-function calcNeatCals({ bwLb, neatSteps, neatModel, kcalPer10kSteps, stepsPerMile, walkMph, walkMET }){
-  if(neatModel === "met"){
-    const kg = lbToKg(bwLb);
-    const spm = Math.max(1200, +stepsPerMile || 2000);
-    const mph = Math.max(1.5, +walkMph || 3.0);
-    const met = clamp(+walkMET || 3.3, 1.8, 6.0);
-
-    const miles = neatSteps / spm;
-    const hours = miles / mph;
-    return met * kg * hours;
-  }
-
-  // Simple model (your original idea)
-  const per10k = +kcalPer10kSteps || 420;
-  return (neatSteps / 10000) * per10k;
+function runCalories({ bwLb, runMiles }){
+  // kcal ≈ 1.036 kcal/kg/km
+  const kg = bwLb * 0.45359237;
+  const km = runMiles * 1.609344;
+  return RUN_KCAL_PER_KG_PER_KM * kg * km;
 }
 
-// Lifting calories (simple but adjustable):
-// default 5.5 kcal/min for moderate-hard hypertrophy sessions
-function calcLiftCals({ liftMin, liftKcalPerMin }){
-  const kpm = clamp(+liftKcalPerMin || 5.5, 2.0, 10.0);
-  const mins = Math.max(0, +liftMin || 0);
-  return mins * kpm;
+function neatCaloriesFromSteps({ bwLb, steps }){
+  // steps -> distance with fixed stride
+  const miles = (steps * STRIDE_IN) / IN_PER_MILE;
+
+  // distance -> time with assumed walk speed (mph)
+  const hours = miles / WALK_MPH;
+  const minutes = hours * 60;
+
+  // ACSM walking equation (flat):
+  // VO2 (mL/kg/min) = 0.1 * speed(m/min) + 3.5
+  // speed(m/min) = mph * 26.8224
+  const speed_m_min = WALK_MPH * 26.8224;
+  const vo2 = (0.1 * speed_m_min) + 3.5;
+
+  // kcal/min = VO2 * kg / 200
+  const kg = bwLb * 0.45359237;
+  const kcalPerMin = (vo2 * kg) / 200;
+
+  return kcalPerMin * minutes;
 }
 
-// Sauna calories (small, adjustable):
-function calcSaunaCals({ saunaMin, saunaKcalPerMin }){
-  const kpm = clamp(+saunaKcalPerMin || 2.5, 0.0, 6.0);
-  const mins = Math.max(0, +saunaMin || 0);
-  return mins * kpm;
+function liftCalories({ liftMin }){
+  const rate = LIFT_KCAL_MIN[selectedIntensity] ?? LIFT_KCAL_MIN[3];
+  return liftMin * rate;
 }
 
-// Macro logic tuned for YOUR goals:
-// - protein: ~0.9 g/lb (floor 170g) with slight bump on lift days
-// - fat: 0.30–0.42 g/lb (lower on quality/long run days to leave room for carbs)
-// - carbs: fill remaining calories
-function calcMacros({ bwLb, targetKcal, dayType }){
-  // Protein
-  let protein = bwLb * 0.9;
+function saunaCalories({ saunaMin }){
+  return saunaMin * SAUNA_KCAL_PER_MIN;
+}
+
+function calcSodiumMg({ runMiles, saunaMin, steps, hardDay }){
+  // Practical heuristic (not medical):
+  // baseline + run + steps + sauna + hard day bump
+  let sodium = 2500;
+  sodium += runMiles * 150;
+  sodium += (steps / 10000) * 250;
+  sodium += saunaMin * 30;
+  if (hardDay) sodium += 300;
+  return round(sodium);
+}
+
+function calculate(){
+  const bwLb = +$("bwLb").value || 0;
+  const bmr = +$("bmr").value || 0;
+  const surplusBase = +$("surplus").value || 0;
+  const tefFactor = +$("tefFactor").value || 0.90;
+
+  const runMilesVal = +$("runMiles").value || 0;
+  const stepsVal = +$("steps").value || 0;
+  const liftMinVal = +$("liftMin").value || 0;
+  const saunaMinVal = +$("saunaMin").value || 0;
+
+  const hardDay = $("hardDay").checked;
+  const aggressiveBulk = $("aggressiveBulk").checked;
+
+  const runCals = runCalories({ bwLb, runMiles: runMilesVal });
+  const neatCals = neatCaloriesFromSteps({ bwLb, steps: stepsVal });
+  const liftCals = liftCalories({ liftMin: liftMinVal });
+  const saunaCals = saunaCalories({ saunaMin: saunaMinVal });
+
+  let surplus = surplusBase + (aggressiveBulk ? 150 : 0);
+
+  const maintenance = bmr + runCals + neatCals + liftCals + saunaCals;
+
+  // TEF adjustment: intake target = (maintenance + surplus) / tefFactor
+  const target = (maintenance + surplus) / clamp(tefFactor, 0.80, 0.95);
+
+  // -------------------
+  // Macro targets
+  // -------------------
+  // Protein: 0.9 g/lb, floors
+  let protein = bwLb * 0.90;
   protein = Math.max(protein, 170);
-
-  // Lift days: small floor bump
-  if(dayType !== "rest") protein = Math.max(protein, 180);
-
-  // Cap protein so it doesn’t crowd carbs
-  protein = clamp(protein, 170, 220);
+  if (liftMinVal > 0) protein = Math.max(protein, 180);
   protein = round(protein);
 
-  // Fat per lb depends on day type
-  let fatPerLb = 0.40; // default
-  if(dayType === "easy") fatPerLb = 0.38;
-  if(dayType === "quality") fatPerLb = 0.34;
-  if(dayType === "long") fatPerLb = 0.33;
-  if(dayType === "rest") fatPerLb = 0.42;
+  // Fat: vary with run volume; keep sane bounds
+  let fatPerLb = 0.42;
+  if (runMilesVal >= 6) fatPerLb = 0.40;
+  if (runMilesVal >= 10) fatPerLb = 0.37;
+  if (runMilesVal >= 13) fatPerLb = 0.35;
+  if (hardDay) fatPerLb -= 0.03;
 
   fatPerLb = clamp(fatPerLb, 0.30, 0.45);
   let fat = round(bwLb * fatPerLb);
 
-  // Guardrails
-  fat = clamp(fat, 50, 110);
+  // Carbs fill remainder
+  let carbs = round((target - (protein * 4) - (fat * 9)) / 4);
 
-  const proteinCals = protein * 4;
-  const fatCals = fat * 9;
-
-  let carbCals = targetKcal - proteinCals - fatCals;
-  if(carbCals < 0){
-    // if inputs are weird, keep minimum carbs and reduce fat
-    carbCals = 0;
-  }
-  let carbs = round(carbCals / 4);
-
-  // Minimum carbs depending on training day:
-  const minCarbs =
-    (dayType === "quality") ? 320 :
-    (dayType === "long") ? 350 :
-    (dayType === "easy") ? 260 :
-    (dayType === "lift") ? 220 :
-    180;
-
-  if(carbs < minCarbs){
-    const need = minCarbs - carbs;
-    carbs += need;
-    // reduce fat to compensate if possible
-    const fatDrop = Math.ceil((need * 4) / 9);
-    fat = Math.max(45, fat - fatDrop);
+  // Guardrails: ensure carbs not absurdly low
+  // (hybrid + bulking tends to need carbs)
+  const minCarbs = hardDay ? 280 : 220;
+  if (carbs < minCarbs){
+    const needed = minCarbs - carbs;
+    carbs += needed;
+    // pull calories from fat first if possible
+    const fatReduction = Math.ceil((needed * 4) / 9);
+    fat = Math.max(45, fat - fatReduction);
   }
 
-  return { protein, carbs, fat };
-}
-
-function calculate(){
-  const bw = +$("bw").value || 147;
-  const miles = +$("miles").value || 0;
-  const neatSteps = +$("neatSteps").value || 0;
-  const liftMin = +$("liftMin").value || 0;
-  const saunaMin = +$("saunaMin").value || 0;
-
-  const dayType = $("dayType").value;
-
-  const bmr = +$("bmr").value || 1750;
-  const surplusBase = +$("surplus").value || 300;
-  const aggressiveBulk = $("aggressiveBulk").checked;
-
-  const runEff = +$("runEff").value || 1.0;
-
-  const neatModel = $("neatModel").value;
-  const kcalPer10kSteps = +$("kcalPer10kSteps").value || 420;
-  const stepsPerMile = +$("stepsPerMile").value || 2000;
-  const walkMph = +$("walkMph").value || 3.0;
-  const walkMET = +$("walkMET").value || 3.3;
-
-  const liftKcalPerMin = +$("liftKcalPerMin").value || 5.5;
-  const saunaKcalPerMin = +$("saunaKcalPerMin").value || 2.5;
-
-  // Activity calories
-  const runCals = calcRunCals({ bwLb: bw, miles, runEff });
-  const neatCals = calcNeatCals({
-    bwLb: bw, neatSteps, neatModel,
-    kcalPer10kSteps, stepsPerMile, walkMph, walkMET
-  });
-  const liftCals = calcLiftCals({ liftMin, liftKcalPerMin });
-  const saunaCals = calcSaunaCals({ saunaMin, saunaKcalPerMin });
-
-  // Surplus
-  let surplus = surplusBase;
-  if(aggressiveBulk) surplus += 150;
-
-  // Maintenance and target
-  const maintenance = bmr + runCals + neatCals + liftCals + saunaCals;
-  const target = maintenance + surplus;
-
-  const macros = calcMacros({ bwLb: bw, targetKcal: target, dayType });
+  const sodium = calcSodiumMg({ runMiles: runMilesVal, saunaMin: saunaMinVal, steps: stepsVal, hardDay });
 
   $("results").innerHTML = `
-    <div class="tile">
-      <div class="k">Target calories</div>
-      <div class="v">${round(target)} kcal</div>
-      <div class="small">Maintenance ${round(maintenance)} + surplus ${round(surplus)}</div>
+    <div class="boxGrid">
+      <div class="box"><div class="k">Maintenance</div><div class="v">${round(maintenance)} kcal</div></div>
+      <div class="box"><div class="k">Target (TEF-adjusted)</div><div class="v">${round(target)} kcal</div></div>
+      <div class="box"><div class="k">Surplus (input)</div><div class="v">${round(surplus)} kcal</div></div>
     </div>
 
-    <div class="tile">
-      <div class="k">Macros</div>
-      <div class="v">${macros.protein}P / ${macros.carbs}C / ${macros.fat}F</div>
-      <div class="small">Protein fixed first, carbs fill, fat adjusted by day type</div>
+    <hr/>
+
+    <div class="boxGrid">
+      <div class="box"><div class="k">Run</div><div class="v">${round(runCals)} kcal</div></div>
+      <div class="box"><div class="k">Steps (NEAT)</div><div class="v">${round(neatCals)} kcal</div></div>
+      <div class="box"><div class="k">Lift</div><div class="v">${round(liftCals)} kcal</div></div>
+      <div class="box"><div class="k">Sauna</div><div class="v">${round(saunaCals)} kcal</div></div>
+      <div class="box"><div class="k">Sodium</div><div class="v">~${sodium} mg</div></div>
+      <div class="box"><div class="k">TEF factor</div><div class="v">${clamp(tefFactor,0.80,0.95).toFixed(2)}</div></div>
     </div>
 
-    <div class="tile">
-      <div class="k">Run calories</div>
-      <div class="v">${round(runCals)} kcal</div>
-      <div class="small">~1.0 kcal/kg/km × efficiency (${runEff.toFixed(2)})</div>
-    </div>
+    <hr/>
 
-    <div class="tile">
-      <div class="k">NEAT calories</div>
-      <div class="v">${round(neatCals)} kcal</div>
-      <div class="small">${neatModel === "met" ? "MET model" : "Simple per-10k model"}</div>
-    </div>
-
-    <div class="tile">
-      <div class="k">Lifting calories</div>
-      <div class="v">${round(liftCals)} kcal</div>
-      <div class="small">${round(liftMin)} min × ${(+liftKcalPerMin).toFixed(1)} kcal/min</div>
-    </div>
-
-    <div class="tile">
-      <div class="k">Sauna calories</div>
-      <div class="v">${round(saunaCals)} kcal</div>
-      <div class="small">${round(saunaMin)} min × ${(+saunaKcalPerMin).toFixed(1)} kcal/min</div>
+    <div class="boxGrid">
+      <div class="box"><div class="k">Protein</div><div class="v">${protein} g</div></div>
+      <div class="box"><div class="k">Carbs</div><div class="v">${carbs} g</div></div>
+      <div class="box"><div class="k">Fat</div><div class="v">${fat} g</div></div>
     </div>
   `;
 }
 
 function applyPreset(name){
-  // Presets set dayType and typical values. You still enter real data.
   if(name === "rest"){
-    $("dayType").value = "rest";
-    $("miles").value = 0;
-    $("neatSteps").value = 10000;
+    $("runMiles").value = 0;
+    $("steps").value = 10000;
     $("liftMin").value = 0;
     $("saunaMin").value = 0;
+    $("hardDay").checked = false;
+    setIntensity(1);
   }
   if(name === "lift"){
-    $("dayType").value = "lift";
-    $("miles").value = 0;
-    $("neatSteps").value = 10000;
-    $("liftMin").value = 60;
+    $("runMiles").value = 0;
+    $("steps").value = 10000;
+    $("liftMin").value = 55;
     $("saunaMin").value = 0;
+    $("hardDay").checked = false;
+    setIntensity(3);
   }
   if(name === "easy"){
-    $("dayType").value = "easy";
-    $("miles").value = 6;
-    $("neatSteps").value = 10000;
-    $("liftMin").value = 60;
+    $("runMiles").value = 6;
+    $("steps").value = 10000;
+    $("liftMin").value = 55;
     $("saunaMin").value = 0;
+    $("hardDay").checked = false;
+    setIntensity(3);
   }
-  if(name === "quality"){
-    $("dayType").value = "quality";
-    $("miles").value = 7.5;
-    $("neatSteps").value = 9000;
-    $("liftMin").value = 60;
+  if(name === "hard"){
+    $("runMiles").value = 7.5;
+    $("steps").value = 10000;
+    $("liftMin").value = 55;
     $("saunaMin").value = 0;
+    $("hardDay").checked = true;
+    setIntensity(3);
   }
   if(name === "long"){
-    $("dayType").value = "long";
-    $("miles").value = 12.5;
-    $("neatSteps").value = 8000;
+    $("runMiles").value = 12.5;
+    $("steps").value = 8000;
     $("liftMin").value = 0;
     $("saunaMin").value = 0;
+    $("hardDay").checked = false;
+    setIntensity(1);
   }
   calculate();
 }
 
-document.querySelectorAll("input, select").forEach(el=>{
-  el.addEventListener("input", calculate);
-  el.addEventListener("change", calculate);
+document.querySelectorAll("input").forEach(input=>{
+  input.addEventListener("input", calculate);
 });
 
 document.querySelectorAll("button[data-preset]").forEach(btn=>{
-  btn.addEventListener("click", () => applyPreset(btn.dataset.preset));
+  btn.addEventListener("click", ()=>applyPreset(btn.dataset.preset));
 });
 
+document.querySelectorAll(".segBtn").forEach(btn=>{
+  btn.addEventListener("click", ()=>setIntensity(+btn.dataset.intensity));
+});
+
+// init
+setIntensity(3);
 calculate();
