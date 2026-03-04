@@ -1,9 +1,9 @@
 {
   "name": "Daily Fueling Calculator",
-  "short_name": "Fuel Calc",
+  "short_name": "Fuel",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0b0f19",
-  "theme_color": "#0b0f19",
+  "background_color": "#0b0c10",
+  "theme_color": "#0b0c10",
   "icons": []
 }
