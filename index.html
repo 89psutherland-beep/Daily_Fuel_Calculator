@@ -1,8 +1,9 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Fueling Calculator</title>
   <link rel="stylesheet" href="styles.css"/>
   <link rel="manifest" href="manifest.webmanifest"/>
@@ -12,148 +13,124 @@
 <body>
   <main class="container">
     <header class="header">
-      <div>
-        <h1>Fuel</h1>
-        <div class="sub">Daily calories + macros for hybrid training</div>
-      </div>
+      <h1>Fueling</h1>
+      <p class="sub">Enter today’s work. Get calories + macros.</p>
     </header>
 
     <section class="card">
+      <div class="cardTitleRow">
+        <h2>Presets</h2>
+        <span class="hint">fills fields only</span>
+      </div>
       <div class="row wrap">
         <button class="btn" data-preset="rest">Rest</button>
         <button class="btn" data-preset="lift">Lift</button>
-        <button class="btn" data-preset="easy">Lift + Easy</button>
-        <button class="btn" data-preset="quality">Lift + Quality</button>
+        <button class="btn" data-preset="easy">Lift + Easy Run</button>
+        <button class="btn" data-preset="hard">Lift + Hard Run</button>
         <button class="btn" data-preset="long">Long Run</button>
       </div>
-      <div class="hint">Presets only fill fields. You still enter today’s real miles/steps.</div>
     </section>
 
     <section class="card">
-      <h2>Today</h2>
+      <div class="cardTitleRow">
+        <h2>Body + Constants</h2>
+        <span class="hint">edit rarely</span>
+      </div>
 
       <div class="grid">
-        <label>
-          Bodyweight (lb)
-          <input id="bw" type="number" value="147" inputmode="decimal"/>
+        <label>Bodyweight (lb)
+          <input id="bwLb" type="number" value="147" inputmode="decimal"/>
         </label>
 
-        <label>
-          Run miles
-          <input id="miles" type="number" step="0.1" value="0" inputmode="decimal"/>
+        <label>BMR (kcal)
+          <input id="bmr" type="number" value="1750" inputmode="numeric"/>
         </label>
 
-        <label>
-          Non-run steps (NEAT)
-          <input id="neatSteps" type="number" value="10000" inputmode="numeric"/>
+        <label>Surplus (kcal)
+          <input id="surplus" type="number" value="300" inputmode="numeric"/>
         </label>
 
-        <label>
-          Lift (minutes)
-          <input id="liftMin" type="number" value="60" inputmode="numeric"/>
-        </label>
-
-        <label>
-          Sauna (minutes)
-          <input id="saunaMin" type="number" value="0" inputmode="numeric"/>
-        </label>
-
-        <label>
-          Day type
-          <select id="dayType">
-            <option value="rest">Rest</option>
-            <option value="lift">Lift</option>
-            <option value="easy">Lift + Easy Run</option>
-            <option value="quality">Lift + Quality Run</option>
-            <option value="long">Long Run Day</option>
-          </select>
+        <label>TEF factor
+          <input id="tefFactor" type="number" value="0.90" step="0.01" min="0.80" max="0.95" inputmode="decimal"/>
+          <span class="microhint">0.90 ≈ +10% for digestion</span>
         </label>
       </div>
-
-      <div class="row">
-        <label class="check">
-          <input id="aggressiveBulk" type="checkbox"/>
-          Aggressive bulk (+150 kcal)
-        </label>
-      </div>
-
-      <details class="details">
-        <summary>Advanced</summary>
-
-        <div class="grid mt">
-          <label>
-            BMR (kcal)
-            <input id="bmr" type="number" value="1750" inputmode="numeric"/>
-          </label>
-
-          <label>
-            Surplus (kcal)
-            <input id="surplus" type="number" value="300" inputmode="numeric"/>
-          </label>
-
-          <label>
-            Run efficiency (0.90–1.10)
-            <input id="runEff" type="number" step="0.01" value="1.00" inputmode="decimal"/>
-          </label>
-
-          <label>
-            NEAT model
-            <select id="neatModel">
-              <option value="simple">Simple (kcal per 10k steps)</option>
-              <option value="met">MET (steps→distance→time)</option>
-            </select>
-          </label>
-
-          <label>
-            Simple NEAT kcal / 10k steps
-            <input id="kcalPer10kSteps" type="number" value="420" inputmode="numeric"/>
-          </label>
-
-          <label>
-            Steps per mile (MET model)
-            <input id="stepsPerMile" type="number" value="2000" inputmode="numeric"/>
-          </label>
-
-          <label>
-            Walking speed mph (MET model)
-            <input id="walkMph" type="number" step="0.1" value="3.0" inputmode="decimal"/>
-          </label>
-
-          <label>
-            Walking MET (MET model)
-            <input id="walkMET" type="number" step="0.1" value="3.3" inputmode="decimal"/>
-          </label>
-
-          <label>
-            Lift kcal / minute
-            <input id="liftKcalPerMin" type="number" step="0.1" value="5.5" inputmode="decimal"/>
-          </label>
-
-          <label>
-            Sauna kcal / minute
-            <input id="saunaKcalPerMin" type="number" step="0.1" value="2.5" inputmode="decimal"/>
-          </label>
-        </div>
-
-        <div class="hint mt">
-          Notes:
-          <ul class="bullets">
-            <li><b>Run kcal</b> uses ~1.0 kcal/kg/km (very robust) × <b>run efficiency</b>.</li>
-            <li><b>NEAT</b>: keep “Simple” unless you want the MET model.</li>
-            <li><b>Non-run steps</b> should exclude steps you’re already counting inside run miles.</li>
-          </ul>
-        </div>
-      </details>
     </section>
 
     <section class="card">
-      <h2>Results</h2>
-      <div id="results" class="results"></div>
+      <div class="cardTitleRow">
+        <h2>Today</h2>
+        <span class="hint">simple inputs</span>
+      </div>
+
+      <div class="grid">
+        <label>Run miles
+          <input id="runMiles" type="number" value="0" step="0.1" inputmode="decimal"/>
+          <span class="microhint">Includes commute runs if you want</span>
+        </label>
+
+        <label>Steps (NEAT)
+          <input id="steps" type="number" value="10000" inputmode="numeric"/>
+          <span class="microhint">Uses 30″ stride length</span>
+        </label>
+
+        <label>Lifting minutes
+          <input id="liftMin" type="number" value="0" inputmode="numeric"/>
+        </label>
+
+        <label>Sauna minutes
+          <input id="saunaMin" type="number" value="0" inputmode="numeric"/>
+        </label>
+      </div>
+
+      <div class="row between">
+        <div class="col">
+          <div class="labelRow">
+            <span class="label">Lift intensity</span>
+            <span class="hint">1–5</span>
+          </div>
+          <div class="seg" role="group" aria-label="Lift intensity">
+            <button class="segBtn" data-intensity="1" type="button">1</button>
+            <button class="segBtn" data-intensity="2" type="button">2</button>
+            <button class="segBtn" data-intensity="3" type="button">3</button>
+            <button class="segBtn" data-intensity="4" type="button">4</button>
+            <button class="segBtn" data-intensity="5" type="button">5</button>
+          </div>
+          <div class="microhint" id="liftKcalHint"></div>
+        </div>
+
+        <div class="col">
+          <label class="check">
+            <input id="hardDay" type="checkbox"/>
+            Hard run day (threshold/VO2/fast-finish)
+          </label>
+
+          <label class="check">
+            <input id="aggressiveBulk" type="checkbox"/>
+            Aggressive (+150 kcal)
+          </label>
+        </div>
+      </div>
     </section>
 
-    <footer class="footer">
-      <div class="subtle">Priority: calories → protein → carbs → fat.</div>
-    </footer>
+    <section class="card">
+      <div class="cardTitleRow">
+        <h2>Results</h2>
+        <span class="hint">targets</span>
+      </div>
+      <div id="results" class="results"></div>
+      <p class="foot">Priority: calories → protein → carbs → fat.</p>
+    </section>
+
+    <section class="card subtle">
+      <h2>Assumptions</h2>
+      <ul class="list">
+        <li><strong>Running</strong>: ~1.036 kcal/kg/km.</li>
+        <li><strong>Steps</strong>: 30″ stride length; walking speed assumed 3.0 mph to convert distance → time; ACSM walking equation used for kcal.</li>
+        <li><strong>Sauna</strong>: ~2.0 kcal/min (small).</li>
+        <li><strong>TEF</strong>: target is divided by TEF factor (default 0.90).</li>
+      </ul>
+    </section>
   </main>
 
   <script src="app.js"></script>
