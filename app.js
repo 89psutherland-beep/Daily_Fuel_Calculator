@@ -83,7 +83,6 @@ function calculate(){
   const bwLb = +$("bwLb").value || 0;
   const bmr = +$("bmr").value || 0;
   const surplusBase = +$("surplus").value || 0;
-  const tefFactor = +$("tefFactor").value || 0.90;
 
   const runMilesVal = +$("runMiles").value || 0;
   const stepsVal = +$("steps").value || 0;
@@ -102,8 +101,9 @@ function calculate(){
 
   const maintenance = bmr + runCals + neatCals + liftCals + saunaCals;
 
-  // TEF adjustment: intake target = (maintenance + surplus) / tefFactor
-  const target = (maintenance + surplus) / clamp(tefFactor, 0.80, 0.95);
+  // TEF REMOVED:
+  // Target = maintenance + surplus
+  const target = maintenance + surplus;
 
   // -------------------
   // Macro targets
@@ -128,7 +128,6 @@ function calculate(){
   let carbs = round((target - (protein * 4) - (fat * 9)) / 4);
 
   // Guardrails: ensure carbs not absurdly low
-  // (hybrid + bulking tends to need carbs)
   const minCarbs = hardDay ? 280 : 220;
   if (carbs < minCarbs){
     const needed = minCarbs - carbs;
@@ -143,7 +142,7 @@ function calculate(){
   $("results").innerHTML = `
     <div class="boxGrid">
       <div class="box"><div class="k">Maintenance</div><div class="v">${round(maintenance)} kcal</div></div>
-      <div class="box"><div class="k">Target (TEF-adjusted)</div><div class="v">${round(target)} kcal</div></div>
+      <div class="box"><div class="k">Target</div><div class="v">${round(target)} kcal</div></div>
       <div class="box"><div class="k">Surplus (input)</div><div class="v">${round(surplus)} kcal</div></div>
     </div>
 
@@ -155,7 +154,6 @@ function calculate(){
       <div class="box"><div class="k">Lift</div><div class="v">${round(liftCals)} kcal</div></div>
       <div class="box"><div class="k">Sauna</div><div class="v">${round(saunaCals)} kcal</div></div>
       <div class="box"><div class="k">Sodium</div><div class="v">~${sodium} mg</div></div>
-      <div class="box"><div class="k">TEF factor</div><div class="v">${clamp(tefFactor,0.80,0.95).toFixed(2)}</div></div>
     </div>
 
     <hr/>
@@ -227,3 +225,7 @@ document.querySelectorAll(".segBtn").forEach(btn=>{
 // init
 setIntensity(3);
 calculate();
+
+
+
+
