@@ -5,14 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Fueling Calculator</title>
   <link rel="stylesheet" href="styles.css"/>
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <meta name="theme-color" content="#0b0f19"/>
 </head>
 
 <body>
   <main class="container">
-    <header class="top">
-      <h1>Fuel</h1>
-      <p class="muted">Targets for calories + macros based on your day. Keep it simple.</p>
+    <header class="header">
+      <div>
+        <h1>Fuel</h1>
+        <div class="sub">Daily calories + macros for hybrid training</div>
+      </div>
     </header>
 
     <section class="card">
@@ -23,71 +26,47 @@
         <button class="btn" data-preset="quality">Lift + Quality</button>
         <button class="btn" data-preset="long">Long Run</button>
       </div>
-      <p class="muted small">Presets just fill fields. You can override anything.</p>
+      <div class="hint">Presets only fill fields. You still enter today’s real miles/steps.</div>
     </section>
 
     <section class="card">
       <h2>Today</h2>
 
       <div class="grid">
-        <label>Bodyweight (lb)
-          <input id="bwLb" type="number" inputmode="decimal" value="147"/>
+        <label>
+          Bodyweight (lb)
+          <input id="bw" type="number" value="147" inputmode="decimal"/>
         </label>
 
-        <label>Non-run steps (NEAT)
-          <input id="neatSteps" type="number" inputmode="numeric" value="10000"/>
+        <label>
+          Run miles
+          <input id="miles" type="number" step="0.1" value="0" inputmode="decimal"/>
         </label>
 
-        <label>Lifting minutes
-          <input id="liftMin" type="number" inputmode="numeric" value="45"/>
+        <label>
+          Non-run steps (NEAT)
+          <input id="neatSteps" type="number" value="10000" inputmode="numeric"/>
         </label>
 
-        <label>Lifting effort (1–5)
-          <input id="liftEffort" type="number" min="1" max="5" step="1" value="3"/>
+        <label>
+          Lift (minutes)
+          <input id="liftMin" type="number" value="60" inputmode="numeric"/>
         </label>
 
-        <label>Sauna minutes
-          <input id="saunaMin" type="number" inputmode="numeric" value="0"/>
+        <label>
+          Sauna (minutes)
+          <input id="saunaMin" type="number" value="0" inputmode="numeric"/>
         </label>
 
-        <label>Run type
-          <select id="runType">
-            <option value="none">No run</option>
-            <option value="easy">Easy</option>
-            <option value="quality">Threshold/VO₂/fast</option>
-            <option value="long">Long</option>
+        <label>
+          Day type
+          <select id="dayType">
+            <option value="rest">Rest</option>
+            <option value="lift">Lift</option>
+            <option value="easy">Lift + Easy Run</option>
+            <option value="quality">Lift + Quality Run</option>
+            <option value="long">Long Run Day</option>
           </select>
-        </label>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="grid">
-        <label>Run calories method
-          <select id="runMethod">
-            <option value="distance">Distance-based (best default)</option>
-            <option value="treadmill">Treadmill speed+grade+minutes</option>
-          </select>
-        </label>
-
-        <label>Run miles (if distance-based)
-          <input id="runMiles" type="number" step="0.1" value="0"/>
-        </label>
-
-        <label>Run minutes (if treadmill method)
-          <input id="runMin" type="number" step="1" value="0"/>
-        </label>
-
-        <label>Treadmill speed (mph)
-          <input id="tmMph" type="number" step="0.1" value="7.5"/>
-        </label>
-
-        <label>Treadmill incline (%)
-          <input id="tmGrade" type="number" step="0.5" value="0"/>
-        </label>
-
-        <label>Stride length (inches) for steps
-          <input id="strideIn" type="number" step="0.5" value="30"/>
         </label>
       </div>
 
@@ -99,44 +78,82 @@
       </div>
 
       <details class="details">
-        <summary>Advanced constants</summary>
-        <div class="grid" style="margin-top:10px;">
-          <label>BMR (kcal)
-            <input id="bmr" type="number" value="1750"/>
+        <summary>Advanced</summary>
+
+        <div class="grid mt">
+          <label>
+            BMR (kcal)
+            <input id="bmr" type="number" value="1750" inputmode="numeric"/>
           </label>
 
-          <label>Base surplus (kcal)
-            <input id="surplus" type="number" value="300"/>
+          <label>
+            Surplus (kcal)
+            <input id="surplus" type="number" value="300" inputmode="numeric"/>
           </label>
 
-          <label>Walking cost (kcal/kg/km)
-            <input id="walkKcalPerKgKm" type="number" step="0.05" value="0.50"/>
+          <label>
+            Run efficiency (0.90–1.10)
+            <input id="runEff" type="number" step="0.01" value="1.00" inputmode="decimal"/>
           </label>
 
-          <label>Running cost (kcal/kg/km)
-            <input id="runKcalPerKgKm" type="number" step="0.05" value="1.00"/>
+          <label>
+            NEAT model
+            <select id="neatModel">
+              <option value="simple">Simple (kcal per 10k steps)</option>
+              <option value="met">MET (steps→distance→time)</option>
+            </select>
+          </label>
+
+          <label>
+            Simple NEAT kcal / 10k steps
+            <input id="kcalPer10kSteps" type="number" value="420" inputmode="numeric"/>
+          </label>
+
+          <label>
+            Steps per mile (MET model)
+            <input id="stepsPerMile" type="number" value="2000" inputmode="numeric"/>
+          </label>
+
+          <label>
+            Walking speed mph (MET model)
+            <input id="walkMph" type="number" step="0.1" value="3.0" inputmode="decimal"/>
+          </label>
+
+          <label>
+            Walking MET (MET model)
+            <input id="walkMET" type="number" step="0.1" value="3.3" inputmode="decimal"/>
+          </label>
+
+          <label>
+            Lift kcal / minute
+            <input id="liftKcalPerMin" type="number" step="0.1" value="5.5" inputmode="decimal"/>
+          </label>
+
+          <label>
+            Sauna kcal / minute
+            <input id="saunaKcalPerMin" type="number" step="0.1" value="2.5" inputmode="decimal"/>
           </label>
         </div>
 
-        <p class="muted small">
-          Running cost ~1.0 kcal/kg/km is a well-used approximation; treadmill method uses an ACSM-style equation.  [oai_citation:4‡PubMed](https://pubmed.ncbi.nlm.nih.gov/3732253/?utm_source=chatgpt.com)
-        </p>
+        <div class="hint mt">
+          Notes:
+          <ul class="bullets">
+            <li><b>Run kcal</b> uses ~1.0 kcal/kg/km (very robust) × <b>run efficiency</b>.</li>
+            <li><b>NEAT</b>: keep “Simple” unless you want the MET model.</li>
+            <li><b>Non-run steps</b> should exclude steps you’re already counting inside run miles.</li>
+          </ul>
+        </div>
       </details>
     </section>
 
     <section class="card">
       <h2>Results</h2>
-      <div id="results"></div>
+      <div id="results" class="results"></div>
     </section>
 
-    <section class="card">
-      <h2>Rules</h2>
-      <ul class="muted small">
-        <li>Calories first. Protein second. Then carbs. Fat last (but don’t drop fat below the floor).</li>
-        <li>Use <b>distance-based run calories</b> unless treadmill speed/grade is known and accurate.</li>
-        <li>Non-run steps should exclude steps you’re counting as “run miles.”</li>
-      </ul>
-    </section>
+    <footer class="footer">
+      <div class="subtle">Priority: calories → protein → carbs → fat.</div>
+    </footer>
   </main>
 
   <script src="app.js"></script>
