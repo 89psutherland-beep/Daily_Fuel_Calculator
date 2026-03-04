@@ -88,7 +88,7 @@ input:focus{
   border-color: rgba(110,168,254,0.7);
   box-shadow: 0 0 0 3px rgba(110,168,254,0.15);
 }
-
+ 
 .microhint{
   display:block;
   margin-top:6px;
